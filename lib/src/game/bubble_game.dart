@@ -92,11 +92,16 @@ class BubbleGame extends Forge2DGame {
   }
 
   void endGame(bool success) {
-    gameFinished = true;
-    Get.offNamed('/result', arguments: {
-      'success': success,
-      'score': score.value,
-      'levelId': currentLevel.id,
-    });
+    if (!gameFinished) {
+      gameFinished = true;
+      Get.toNamed(
+        '/result',
+        arguments: {
+          'success': success,
+          'score': score.value,
+          'levelId': currentLevel.id,
+        },
+      );
+    }
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'src/routes/app_routes.dart';
 import 'src/screens/start_screen.dart';
 
 void main() {
@@ -17,6 +18,7 @@ class GameApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
+      getPages: AppRoutes.routes,
       home: const StartScreen(),
     );
   }
