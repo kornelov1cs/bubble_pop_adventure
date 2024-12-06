@@ -1,0 +1,195 @@
+import 'package:flame/game.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../game/bubble_game.dart';
+import '../models/level.dart';
+import 'level_select_screen.dart';
+
+class GameScreen extends StatelessWidget {
+  final Level level;
+
+  const GameScreen({super.key, required this.level});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: GameWidget<BubbleGame>(
+        game: BubbleGame(level),
+        loadingBuilder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        overlayBuilderMap: {
+          'gameUI': (context, game) => GameOverlay(game: game),
+        },
+        initialActiveOverlays: const ['gameUI'],
+      ),
+    );
+  }
+}
+
+class GameOverlay extends StatelessWidget {
+  final BubbleGame game;
+
+  const GameOverlay({super.key, required this.game});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Score display
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: ValueListenableBuilder<int>(
+                  valueListenable: game.score,
+                  builder: (context, score, child) {
+                    return Text(
+                      'Score: $score',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              // Time display (if level has time limit)
+              if (game.currentLevel.timeLimit != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: ValueListenableBuilder<double>(
+                    valueListenable: game.timeLeft,
+                    builder: (context, timeLeft, child) {
+                      final minutes = (timeLeft ~/ 60);
+                      final seconds = (timeLeft % 60).toInt();
+                      return Text(
+                        '$minutes:${seconds.toString().padLeft(2, '0')}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              // Pause button
+              IconButton(
+                onPressed: () => _showPauseMenu(context),
+                icon: const Icon(
+                  Icons.pause_circle,
+                  color: Colors.white,
+                  size: 40,
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          // Level progress
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.black54,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: ValueListenableBuilder<int>(
+              valueListenable: game.score,
+              builder: (context, score, child) {
+                final progress = score / game.currentLevel.targetScore;
+                return Column(
+                  children: [
+                    Text(
+                      'Target: ${game.currentLevel.targetScore}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    LinearProgressIndicator(
+                      value: progress.clamp(0.0, 1.0),
+                      backgroundColor: Colors.white24,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        progress >= 1.0 ? Colors.green : Colors.blue,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPauseMenu(BuildContext context) {
+    game.pauseEngine();
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Game Paused',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        game.resumeEngine();
+                      },
+                      child: const Text('Resume'),
+                    ),
+                    const SizedBox(width: 16),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Get.offAll(() => const LevelSelectScreen());
+                      },
+                      child: const Text('Exit Level'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

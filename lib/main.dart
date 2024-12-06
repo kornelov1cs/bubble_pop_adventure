@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'src/screens/start_screen.dart';
 
 void main() {
-  runApp(const MainApp());
+  runApp(const GameApp());
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+class GameApp extends StatelessWidget {
+  const GameApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
+    return GetMaterialApp(
+      title: 'Bubble Pop Adventure',
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
+      home: const StartScreen(),
     );
   }
 }
