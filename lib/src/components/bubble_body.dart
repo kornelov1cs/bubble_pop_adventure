@@ -44,7 +44,7 @@ class BubbleBody extends BodyComponent with TapCallbacks {
 
   @override
   void onTapDown(TapDownEvent event) {
-    if (!isPopped) {
+    if (!isPopped && (game as BubbleGame).canPopBubble(colorIndex)) {
       pop();
       checkNeighbors();
     }

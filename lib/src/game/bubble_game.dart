@@ -13,6 +13,7 @@ class BubbleGame extends Forge2DGame {
   late final Vector2 gameSize;
   final ValueNotifier<int> score = ValueNotifier(0);
   final ValueNotifier<double> timeLeft = ValueNotifier(0.0);
+  final ValueNotifier<int> selectedColorIndex = ValueNotifier(-1);
   var gameFinished = false;
   final random = Random();
 
@@ -103,5 +104,13 @@ class BubbleGame extends Forge2DGame {
         },
       );
     }
+  }
+
+  void selectColor(int colorIndex) {
+    selectedColorIndex.value = colorIndex;
+  }
+
+  bool canPopBubble(int bubbleColorIndex) {
+    return selectedColorIndex.value == bubbleColorIndex;
   }
 }
