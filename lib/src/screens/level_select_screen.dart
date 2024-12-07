@@ -8,6 +8,8 @@ class LevelSelectScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Select Level'),
@@ -30,9 +32,9 @@ class LevelSelectScreen extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 600),
             child: GridView.builder(
               padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 1.5,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: isSmallScreen ? 1 : 2,
+                childAspectRatio: isSmallScreen ? 2 : 1.5,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
               ),
@@ -56,34 +58,65 @@ class LevelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+
     return Card(
       elevation: 4,
       child: InkWell(
         onTap: () => Get.to(() => GameScreen(level: level)),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Level ${level.id}',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+          child: isSmallScreen
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Level ${level.id}',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Target: ${level.targetScore}',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ],
+                    ),
+                    if (level.timeLimit != null)
+                      Text(
+                        '${level.timeLimit!.inMinutes}:${(level.timeLimit!.inSeconds % 60).toString().padLeft(2, '0')}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                  ],
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Level ${level.id}',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Target: ${level.targetScore}',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    if (level.timeLimit != null)
+                      Text(
+                        '${level.timeLimit!.inMinutes}:${(level.timeLimit!.inSeconds % 60).toString().padLeft(2, '0')}',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Target: ${level.targetScore} points',
-                style: const TextStyle(fontSize: 16),
-              ),
-              if (level.timeLimit != null)
-                Text(
-                  'Time: ${level.timeLimit!.inMinutes}:${(level.timeLimit!.inSeconds % 60).toString().padLeft(2, '0')}',
-                  style: const TextStyle(fontSize: 16),
-                ),
-            ],
-          ),
         ),
       ),
     );
