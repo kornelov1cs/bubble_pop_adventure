@@ -19,3 +19,6 @@ The application is deployed at: https://bubble-pop-adventures.web.app/
 2. **Pop Bubbles**
 
 - Pop bubbles of the indicated color
+
+<img width="800" alt="image" src="https://github.com/user-attachments/assets/8a353fec-d234-4fb2-8091-815d3b7184d4">
+
