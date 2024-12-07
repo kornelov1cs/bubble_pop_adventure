@@ -1,9 +1,16 @@
+import 'package:bubble_pop_adventure/src/services/level_progress_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'src/routes/app_routes.dart';
 import 'src/screens/start_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+// Initialize level progress service
+  final levelProgressService = LevelProgressService();
+  await levelProgressService.init();
+
   runApp(const GameApp());
 }
 

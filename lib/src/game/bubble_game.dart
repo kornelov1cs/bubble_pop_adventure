@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:bubble_pop_adventure/src/services/level_progress_service.dart';
 import 'package:flame/components.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flutter/foundation.dart';
@@ -11,6 +12,7 @@ import '../components/background_component.dart';
 class BubbleGame extends Forge2DGame {
   final Level currentLevel;
   late final Vector2 gameSize;
+  final LevelProgressService _progressService = LevelProgressService();
 
   // Observable values
   final ValueNotifier<int> score = ValueNotifier(0);
@@ -137,6 +139,11 @@ class BubbleGame extends Forge2DGame {
   void endGame(bool success) {
     if (!gameFinished) {
       gameFinished = true;
+
+      if (success) {
+        _progressService.markLevelCompleted(currentLevel.id, score.value);
+      }
+
       Get.toNamed(
         '/result',
         arguments: {

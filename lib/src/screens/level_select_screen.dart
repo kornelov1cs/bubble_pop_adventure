@@ -1,10 +1,18 @@
 import 'package:bubble_pop_adventure/src/models/level.dart';
 import 'package:bubble_pop_adventure/src/screens/game_screen.dart';
+import 'package:bubble_pop_adventure/src/services/level_progress_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class LevelSelectScreen extends StatelessWidget {
+class LevelSelectScreen extends StatefulWidget {
   const LevelSelectScreen({super.key});
+
+  @override
+  _LevelSelectScreenState createState() => _LevelSelectScreenState();
+}
+
+class _LevelSelectScreenState extends State<LevelSelectScreen> {
+  final LevelProgressService _progressService = LevelProgressService();
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +49,11 @@ class LevelSelectScreen extends StatelessWidget {
               itemCount: Level.levels.length,
               itemBuilder: (context, index) {
                 final level = Level.levels[index];
-                return LevelCard(level: level);
+                return LevelCard(
+                  level: level,
+                  isCompleted: _progressService.isLevelCompleted(level.id),
+                  highScore: _progressService.getLevelHighScore(level.id),
+                );
               },
             ),
           ),
@@ -53,8 +65,15 @@ class LevelSelectScreen extends StatelessWidget {
 
 class LevelCard extends StatelessWidget {
   final Level level;
+  final bool isCompleted;
+  final int? highScore;
 
-  const LevelCard({super.key, required this.level});
+  const LevelCard({
+    super.key,
+    required this.level,
+    this.isCompleted = false,
+    this.highScore,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -86,13 +105,30 @@ class LevelCard extends StatelessWidget {
                           'Target: ${level.targetScore}',
                           style: const TextStyle(fontSize: 14),
                         ),
+                        if (highScore != null)
+                          Text(
+                            'High Score: $highScore',
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.green),
+                          ),
                       ],
                     ),
-                    if (level.timeLimit != null)
-                      Text(
-                        '${level.timeLimit!.inMinutes}:${(level.timeLimit!.inSeconds % 60).toString().padLeft(2, '0')}',
-                        style: const TextStyle(fontSize: 14),
-                      ),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (level.timeLimit != null)
+                          Text(
+                            '${level.timeLimit!.inMinutes}:${(level.timeLimit!.inSeconds % 60).toString().padLeft(2, '0')}',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        if (isCompleted)
+                          const Icon(
+                            Icons.check_circle,
+                            color: Colors.green,
+                            size: 30,
+                          ),
+                      ],
+                    ),
                   ],
                 )
               : Column(
@@ -114,6 +150,18 @@ class LevelCard extends StatelessWidget {
                       Text(
                         '${level.timeLimit!.inMinutes}:${(level.timeLimit!.inSeconds % 60).toString().padLeft(2, '0')}',
                         style: const TextStyle(fontSize: 16),
+                      ),
+                    if (highScore != null)
+                      Text(
+                        'High Score: $highScore',
+                        style:
+                            const TextStyle(fontSize: 14, color: Colors.green),
+                      ),
+                    if (isCompleted)
+                      const Icon(
+                        Icons.check_circle,
+                        color: Colors.green,
+                        size: 30,
                       ),
                   ],
                 ),
