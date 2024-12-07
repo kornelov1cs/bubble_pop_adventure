@@ -23,7 +23,7 @@ class ColorIndicator extends StatelessWidget {
             color: Colors.black54,
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Column(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(

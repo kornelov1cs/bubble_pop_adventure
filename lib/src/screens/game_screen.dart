@@ -13,201 +13,231 @@ class GameScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final game = BubbleGame(level);
+
     return Scaffold(
-      body: GameWidget<BubbleGame>(
-        game: BubbleGame(level),
-        loadingBuilder: (context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
-        overlayBuilderMap: {
-          'gameUI': (context, game) => GameOverlay(game: game),
-        },
-        initialActiveOverlays: const ['gameUI'],
-      ),
-    );
-  }
-}
-
-class GameOverlay extends StatelessWidget {
-  final BubbleGame game;
-
-  const GameOverlay({super.key, required this.game});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
+      body: Stack(
         children: [
-          const Spacer(flex: 3), // Game area space
-          // Side panel with indicators
-          Container(
-            width: 200, // Fixed width for side panel
-            decoration: BoxDecoration(
-              color: Colors.black38,
-              borderRadius: BorderRadius.circular(20),
+          // Full-screen game area
+          GameWidget<BubbleGame>(
+            game: game,
+            loadingBuilder: (context) => const Center(
+              child: CircularProgressIndicator(),
             ),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                // Score display
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
+          ),
+          // Floating top bar that ignores touch events
+          IgnorePointer(
+            child: TopGameBar(game: game),
+          ),
+          // Touch-sensitive pause button in top-right corner
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            right: 8,
+            child: IconButton(
+              onPressed: () => _showPauseMenu(context, game),
+              icon: const Icon(
+                Icons.pause_circle,
+                color: Colors.white,
+                size: 32,
+                shadows: [
+                  Shadow(
                     color: Colors.black54,
-                    borderRadius: BorderRadius.circular(20),
+                    blurRadius: 4,
                   ),
-                  child: ValueListenableBuilder<int>(
-                    valueListenable: game.score,
-                    builder: (context, score, child) {
-                      return Text(
-                        'Score: $score',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Time display (if level has time limit)
-                if (game.currentLevel.timeLimit != null) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: ValueListenableBuilder<double>(
-                      valueListenable: game.timeLeft,
-                      builder: (context, timeLeft, child) {
-                        final minutes = (timeLeft ~/ 60);
-                        final seconds = (timeLeft % 60).toInt();
-                        return Text(
-                          '$minutes:${seconds.toString().padLeft(2, '0')}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 16),
                 ],
-                // Pause button
-                IconButton(
-                  onPressed: () => _showPauseMenu(context),
-                  icon: const Icon(
-                    Icons.pause_circle,
-                    color: Colors.white,
-                    size: 40,
-                  ),
-                ),
-                const Spacer(flex: 1),
-                // Color Indicator
-                ColorIndicator(game: game),
-                const Spacer(flex: 2),
-                // Level progress
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: ValueListenableBuilder<int>(
-                    valueListenable: game.score,
-                    builder: (context, score, child) {
-                      final progress = score / game.currentLevel.targetScore;
-                      return Column(
-                        children: [
-                          Text(
-                            'Target: ${game.currentLevel.targetScore}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            width: double.infinity,
-                            child: LinearProgressIndicator(
-                              value: progress.clamp(0.0, 1.0),
-                              backgroundColor: Colors.white24,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                progress >= 1.0 ? Colors.green : Colors.blue,
-                              ),
-                              minHeight: 10,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  void _showPauseMenu(BuildContext context) {
-    game.pauseEngine();
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Center(
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Game Paused',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+class TopGameBar extends StatelessWidget {
+  final BubbleGame game;
+
+  const TopGameBar({super.key, required this.game});
+
+  @override
+  Widget build(BuildContext context) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 8,
+        left: 12,
+        right: 12,
+        bottom: 8,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.black.withOpacity(0.4),
+            Colors.transparent,
+          ],
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              // Score display
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 8 : 12,
+                  vertical: isSmallScreen ? 4 : 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: ValueListenableBuilder<int>(
+                  valueListenable: game.score,
+                  builder: (context, score, child) {
+                    return Text(
+                      'Score: $score',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: isSmallScreen ? 14 : 16,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              if (game.currentLevel.timeLimit != null) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isSmallScreen ? 8 : 12,
+                    vertical: isSmallScreen ? 4 : 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: ValueListenableBuilder<double>(
+                    valueListenable: game.timeLeft,
+                    builder: (context, timeLeft, child) {
+                      final minutes = (timeLeft ~/ 60);
+                      final seconds = (timeLeft % 60).toInt();
+                      return Text(
+                        '$minutes:${seconds.toString().padLeft(2, '0')}',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: isSmallScreen ? 14 : 16,
+                        ),
+                      );
+                    },
                   ),
                 ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        game.resumeEngine();
-                      },
-                      child: const Text('Resume'),
-                    ),
-                    const SizedBox(width: 16),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Get.offAll(() => const LevelSelectScreen());
-                      },
-                      child: const Text('Exit Level'),
-                    ),
-                  ],
-                ),
               ],
-            ),
+              const SizedBox(width: 48), // Space for pause button
+            ],
           ),
-        ),
+          const SizedBox(height: 4),
+          ValueListenableBuilder<int>(
+            valueListenable: game.score,
+            builder: (context, score, child) {
+              final progress = score / game.currentLevel.targetScore;
+              return Row(
+                children: [
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: progress.clamp(0.0, 1.0),
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          progress >= 1.0 ? Colors.green : Colors.blue,
+                        ),
+                        minHeight: isSmallScreen ? 4 : 6,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${(progress * 100).toInt()}%',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: isSmallScreen ? 10 : 12,
+                      shadows: const [
+                        Shadow(
+                          color: Colors.black54,
+                          blurRadius: 2,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 4),
+          SizedBox(
+            height: 50,
+            child: ColorIndicator(game: game),
+          ),
+        ],
       ),
     );
   }
+}
+
+void _showPauseMenu(BuildContext context, BubbleGame game) {
+  game.pauseEngine();
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => Center(
+      child: Card(
+        color: Colors.black87,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Game Paused',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      game.resumeEngine();
+                    },
+                    child: const Text('Resume'),
+                  ),
+                  const SizedBox(width: 16),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Get.offAll(() => const LevelSelectScreen());
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Exit Level'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }
