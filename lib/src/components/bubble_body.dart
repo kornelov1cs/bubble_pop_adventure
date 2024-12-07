@@ -55,6 +55,7 @@ class BubbleBody extends BodyComponent with TapCallbacks {
     game.world.add(PopEffect(position: body.position));
     game.world.remove(this);
     (game as BubbleGame).incrementScore(isSpecial ? 200 : 100);
+    (game as BubbleGame).bubblePopped(isSpecial);
   }
 
   void checkNeighbors() {

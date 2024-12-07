@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../models/level.dart';
 import '../components/bubble_body.dart';
@@ -11,9 +11,13 @@ import '../components/background_component.dart';
 class BubbleGame extends Forge2DGame {
   final Level currentLevel;
   late final Vector2 gameSize;
+
+  // Observable values
   final ValueNotifier<int> score = ValueNotifier(0);
   final ValueNotifier<double> timeLeft = ValueNotifier(0.0);
   final ValueNotifier<int> selectedColorIndex = ValueNotifier(-1);
+
+  // Game state
   var gameFinished = false;
   final random = Random();
 
@@ -31,29 +35,22 @@ class BubbleGame extends Forge2DGame {
   Future<void> onLoad() async {
     await super.onLoad();
 
+    // Initialize game area
     final rect = camera.visibleWorldRect;
     gameSize = Vector2(rect.width, rect.height);
 
-    // Add boundaries
+    // Add game components
     world.add(GameBounds());
-
-    // Add background
     world.add(BackgroundComponent());
 
-    // Add initial bubbles
-    spawnBubbles();
-
-    // Set initial time for timed levels
+    // Initialize time if level has time limit
     if (currentLevel.timeLimit != null) {
       timeLeft.value = currentLevel.timeLimit!.inSeconds.toDouble();
     }
-  }
 
-  void incrementScore(int amount) {
-    score.value += amount;
-    if (score.value >= currentLevel.targetScore) {
-      endGame(true);
-    }
+    // Spawn initial bubbles and select first color
+    spawnBubbles();
+    selectRandomColor();
   }
 
   void spawnBubbles() {
@@ -81,9 +78,54 @@ class BubbleGame extends Forge2DGame {
     }
   }
 
+  void selectRandomColor() {
+    List<int> availableColors = [];
+
+    // Check which colors are still available
+    for (int i = 0; i < currentLevel.minColors; i++) {
+      if (hasColoredBubblesLeft(i)) {
+        availableColors.add(i);
+      }
+    }
+
+    if (availableColors.isEmpty) {
+      // No more moves possible
+      endGame(score.value >= currentLevel.targetScore);
+      return;
+    }
+
+    // Select random available color
+    selectedColorIndex.value =
+        availableColors[random.nextInt(availableColors.length)];
+  }
+
+  bool hasColoredBubblesLeft(int colorIndex) {
+    return world.children.whereType<BubbleBody>().any(
+          (bubble) => !bubble.isPopped && bubble.colorIndex == colorIndex,
+        );
+  }
+
+  void incrementScore(int amount) {
+    score.value += amount;
+    if (score.value >= currentLevel.targetScore) {
+      endGame(true);
+    }
+  }
+
+  bool canPopBubble(int bubbleColorIndex) {
+    return !gameFinished && selectedColorIndex.value == bubbleColorIndex;
+  }
+
+  void bubblePopped(bool isSpecial) {
+    incrementScore(isSpecial ? 200 : 100);
+    selectRandomColor();
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
+
+    // Handle time limit
     if (currentLevel.timeLimit != null && !gameFinished) {
       timeLeft.value -= dt;
       if (timeLeft.value <= 0) {
@@ -106,11 +148,11 @@ class BubbleGame extends Forge2DGame {
     }
   }
 
-  void selectColor(int colorIndex) {
-    selectedColorIndex.value = colorIndex;
+  void pauseGame() {
+    pauseEngine();
   }
 
-  bool canPopBubble(int bubbleColorIndex) {
-    return selectedColorIndex.value == bubbleColorIndex;
+  void resumeGame() {
+    resumeEngine();
   }
 }
